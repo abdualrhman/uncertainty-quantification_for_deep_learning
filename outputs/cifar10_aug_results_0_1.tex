@@ -1,14 +1,14 @@
 \begin{table}[t] 
 \centering 
 \small 
-\begin{tabular}{lcccccccccc} 
+\begin{tabular}{lccccccccccc} 
 \toprule 
- & \multicolumn{2}{c}{Accuracy}  & \multicolumn{4}{c}{Coverage} & \multicolumn{4}{c}{Size} \\ 
-\cmidrule(r){2-3}  \cmidrule(r){4-7}  \cmidrule(r){8-11} 
-Model & Top-1 & Top-5 & Top K & Naive & APS & RAPS & Top K & Naive & APS & RAPS \\ 
+ & \multicolumn{3}{c}{Accuracy}  & \multicolumn{4}{c}{Coverage} & \multicolumn{4}{c}{Size} \\ 
+\cmidrule(r){3-4}  \cmidrule(r){5-8}  \cmidrule(r){9-12} 
+Model & F1 & Top-1 & Top-5 & Top K & Naive & APS & RAPS & Top K & Naive & APS & RAPS \\ 
 \midrule 
- Cifar10ConvModel &  0.31 &  0.798 & 0.901 & 0.909 & 0.901 & 0.902 & 6.94 & 6.37 & 6.21 & 6.21 \\ 
- Cifar10Resnet20 &  0.255 &  0.699 & 0.901 & 0.865 & 0.9 & 0.9 & 8.09 & 7.3 & 7.92 & 7.92 \\ 
+ Cifar10ConvModel &  0.47 &  0.518 &  0.917 & 0.897 & 0.905 & 0.901 & 0.898 & 4.03 & 4.11 & 4.06 & 4.0 \\ 
+ Cifar10Resnet20 &  0.472 &  0.508 &  0.88 & 0.899 & 0.899 & 0.896 & 0.898 & 4.86 & 4.84 & 4.83 & 4.86 \\ 
 \bottomrule 
 \end{tabular} 
 \caption{\textbf{Results on Imagenet-Val.} We report coverage and size of the optimal, randomized fixed sets, \naive, \aps,\ and \raps\ sets for nine different Imagenet classifiers. The median-of-means for each column is reported over 100 different trials at the 10\% level. See Section~\ref{subsec:imagenet-val} for full details.} 

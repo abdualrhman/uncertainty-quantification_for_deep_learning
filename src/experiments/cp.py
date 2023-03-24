@@ -8,7 +8,7 @@ import torchvision.transforms as tf
 import torchvision
 import torch.utils.data as tdata
 import torch
-from scipy.stats import median_absolute_deviation as mad
+# from scipy.stats import median_absolute_deviation as mad
 from scipy.special import softmax
 import numpy as np
 from src.utils.cp_utils import *
@@ -111,7 +111,7 @@ def experiment(modelname, datasetname, datasetpath, num_trials, alpha, kreg, lam
         print(
             f'\n\tTop1: {np.median(top1s[0:i+1]):.3f}, Top5: {np.median(top5s[0:i+1]):.3f},  F1: {np.median(f1scores[0:i+1]):.3f}, Coverage: {np.median(coverages[0:i+1]):.3f}, Size: {np.median(sizes[0:i+1]):.3f}\033[F', end='')
     print('')
-    return np.median(top1s), np.median(top5s), np.median(f1scores), np.median(coverages), np.median(sizes), mad(top1s), mad(top5s), mad(coverages), mad(sizes)
+    return np.median(top1s), np.median(top5s), np.median(f1scores), np.median(coverages), np.median(sizes)
 
 
 if __name__ == "__main__":

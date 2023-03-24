@@ -1,0 +1,16 @@
+\begin{table}[t] 
+\centering 
+\small 
+\begin{tabular}{lccccccccccc} 
+\toprule 
+ & \multicolumn{2}{c}{Length}  & \multicolumn{2}{c}{Coverage}  \\ 
+\cmidrule(r){2-3}  \cmidrule(r){4-5} 
+Model & QR & CQR & QR & CQR \\ 
+\midrule 
+ GBQuantileReg & 1.09 & 2.66 & 0.431 & 0.9 \\ 
+ RegFFN & 2.23 & 3.53 & 0.714 & 0.903 \\ 
+\bottomrule 
+\end{tabular} 
+\caption{\textbf{Results on California Housing Testset.} We report the prediction interval length and the coverage fot $\alpha=0.1$ for two quantile regression models and for the same model conformalized} 
+\label{table:California_test_0.1} 
+\end{table} 

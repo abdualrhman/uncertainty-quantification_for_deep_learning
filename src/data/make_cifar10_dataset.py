@@ -7,19 +7,6 @@ import torchvision
 import torchvision.transforms as transforms
 
 
-# def Cifal10Dataset(train: bool, in_folder: str = "", out_folder: str = ""):
-#     transform = transforms.Compose(
-#         [transforms.ToTensor(),
-#          # subtract 0.5 and divide by 0.5
-#          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-#          ]
-#     )
-#     train_set = torchvision.datasets.CIFAR10(
-#         root=out_folder, train=train, download=True, transform=transform)
-#     # test_set = torchvision.datasets.CIFAR10(root=in_folder, train=False, download=True, transform=transform)
-#     return train_set
-
-
 import os.path
 import pickle
 from typing import Any, Callable, Optional, Tuple
@@ -41,9 +28,9 @@ def get_img_transformer():
 
 def get_aug_img_transformer():
     return transforms.Compose([
+        transforms.AugMix(severity=6, chain_depth=6),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        transforms.AugMix(severity=3, chain_depth=3),
     ])
 
 

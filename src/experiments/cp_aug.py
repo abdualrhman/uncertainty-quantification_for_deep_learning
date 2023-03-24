@@ -22,7 +22,7 @@ if __name__ == "__main__":
         m = len(params)
         datasetname = 'Cifar10Aug'
         datasetpath = '/scratch/group/ilsvrc/val/'
-        num_trials = 100
+        num_trials = 10
         kreg = None
         lamda = None
         randomized = True
@@ -46,10 +46,11 @@ if __name__ == "__main__":
                             "Predictor": predictor,
                             "Top1": np.round(out[0], 3),
                             "Top5": np.round(out[1], 3),
+                            "F1": np.round(out[2], 3),
                             "alpha": alpha,
-                            "Coverage": np.round(out[2], 3),
+                            "Coverage": np.round(out[3], 3),
                             "Size":
-                            np.round(out[3], 3)}, ignore_index=True)
+                            np.round(out[4], 3)}, ignore_index=True)
         df.to_csv(cache_fname)
     # Print the TeX table
     table_str = make_table(df, alpha_table)

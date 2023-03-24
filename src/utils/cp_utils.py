@@ -12,6 +12,8 @@ from tqdm import tqdm
 import pdb
 from src.data.make_cifar10_dataset import CIFAR10, get_img_transformer
 from src.models.cifar10_conv_model import Cifar10ConvModel
+from src.models.GB_quantile_regressor import GB_quantile_regressor
+from src.models.regFNN import RegFNN
 from src.utils.utils import *
 
 
@@ -127,56 +129,8 @@ def split2(dataset, n1, n2):
     return data1, data2
 
 
-def get_model(modelname):
-    # if modelname == 'ResNet18':
-    #     model = torchvision.models.resnet18(pretrained=True, progress=True)
-
-    # elif modelname == 'ResNet50':
-    #     model = torchvision.models.resnet50(pretrained=True, progress=True)
-
-    # elif modelname == 'ResNet101':
-    #     model = torchvision.models.resnet101(pretrained=True, progress=True)
-
-    # elif modelname == 'ResNet152':
-    #     model = torchvision.models.resnet152(pretrained=True, progress=True)
-
-    # elif modelname == 'ResNeXt101':
-    #     model = torchvision.models.resnext101_32x8d(
-    #         pretrained=True, progress=True)
-
-    # elif modelname == 'VGG16':
-    #     model = torchvision.models.vgg16(pretrained=True, progress=True)
-
-    # elif modelname == 'ShuffleNet':
-    #     model = torchvision.models.shufflenet_v2_x1_0(
-    #         pretrained=True, progress=True)
-
-    # elif modelname == 'Inception':
-    #     model = torchvision.models.inception_v3(pretrained=True, progress=True)
-
-    # elif modelname == 'DenseNet161':
-    #     model = torchvision.models.densenet161(pretrained=True, progress=True)
-
-    if modelname == 'Cifar10Resnet20':
-        model = torch.hub.load(
-            "chenyaofo/pytorch-cifar-models", "cifar10_resnet20",  pretrained=True)
-
-    elif modelname == "Cifar10ConvModel":
-        model = Cifar10ConvModel()
-        model.load_state_dict(torch.load("./models/trained_model.pt"))
-    else:
-        raise NotImplementedError
-
-    model.eval()
-    model = torch.nn.DataParallel(model).cpu()
-
-    return model
-
-# Computes logits and targets from a model and loader
-
-
 def get_logits_targets(model, loader):
-    # 1000 classes in Imagenet.
+    # Computes logits and targets from a model and loader
     logits = torch.zeros((len(loader.dataset), 10))
     labels = torch.zeros((len(loader.dataset),))
     i = 0
@@ -203,18 +157,7 @@ def get_logits_dataset(modelname, datasetname, datasetpath='', cache='src/experi
 
     # Else we will load our model, run it on the dataset, and save/return the output.
     model = get_model(modelname)
-    # model = Cifar10ConvModel()
-    # transform = transforms.Compose([
-    #     transforms.Resize(256),
-    #     transforms.CenterCrop(224),
-    #     transforms.ToTensor(),
-    #     transforms.Normalize(mean=[0.485, 0.456, 0.406],
-    #                          std=[0.229, 0.224, 0.225])
-    # ])
-
-    # dataset = torchvision.datasets.ImageFolder(datasetpath, transform)
     dataset = get_dataset(datasetname, split='test')
-
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=32)
 
