@@ -3,12 +3,52 @@ import torch
 import pickle
 from sklearn.metrics import f1_score, precision_score, recall_score
 from tqdm import tqdm
-
-from src.data.make_cifar10_dataset import CIFAR10, get_img_transformer, get_aug_img_transformer
+import torchvision
+from torchvision import transforms
+# from src.data.make_cifar10_dataset import CIFAR10, get_aug_img_transformer
 from src.data.make_housing_dataset import CaliforniaHousing
 from src.models.GB_quantile_regressor import GB_quantile_regressor
 from src.models.cifar10_conv_model import Cifar10ConvModel
 from src.models.regFNN import RegFNN
+from torch.utils.data import Dataset, DataLoader
+
+
+def get_aug_img_transformer():
+    return transforms.Compose([
+        transforms.AugMix(severity=6, chain_depth=6),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    ])
+
+
+def get_CIFAR10_img_transformer():
+    return transforms.Compose(
+        [transforms.ToTensor(),
+         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+         ]
+    )
+
+
+params = {
+    'CIFAR10': {
+        'train_args': {'batch_size': 64, 'num_workers': 0},
+        'test_args': {'batch_size': 1000, 'num_workers': 0},
+        'optimizer_args': {'lr': 0.01, 'momentum': 0.5},
+    }
+}
+
+
+class TransformedDataset(torch.utils.data.Dataset):
+    def __init__(self, datapoints):
+        super().__init__()
+        self.data = datapoints[0]
+        self.targets = datapoints[1]
+
+    def __getitem__(self, index: int):
+        return self.data[index], self.targets[index]
+
+    def __len__(self) -> int:
+        return len(self.data)
 
 
 class AverageMeter(object):
@@ -36,16 +76,16 @@ class AverageMeter(object):
         return fmtstr.format(**self.__dict__)
 
 
-def get_dataset(datasetname: str, split: str, datapath: str = 'data/processed'):
+def get_dataset(datasetname: str, train: bool = True, datapath: str = 'data/processed'):
     if datasetname == 'Cifar10':
-        return CIFAR10(split=split, root=datapath, download=True,
-                       transform=get_img_transformer())
+        return torchvision.datasets.CIFAR10(train=train, root=datapath, download=True,
+                                            transform=get_CIFAR10_img_transformer())
     elif datasetname == 'Cifar10Aug':
-        return CIFAR10(split=split, root=datapath, download=True,
-                       transform=get_aug_img_transformer())
+        return torchvision.datasets.CIFAR10(train=train, root=datapath, download=True,
+                                            transform=get_aug_img_transformer())
     elif datasetname == 'CalHousing':
         return CaliforniaHousing(
-            split=split, in_folder='data/raw', out_folder='data/processed')
+            train, in_folder='data/raw', out_folder='data/processed')
 
 
 def get_metrics_score(output, target):
@@ -165,6 +205,17 @@ def get_logits_dataset(modelname, datasetname, datasetpath='', cache='src/experi
     return dataset_logits
 
 
+def rename_attribute(object_, old_attribute_name, new_attribute_name):
+    setattr(object_, new_attribute_name, getattr(object_, old_attribute_name))
+    delattr(object_, old_attribute_name)
+
+
+def get_untrained_model(modelname: str):
+    if modelname == 'Cifar10ConvModel':
+        model = Cifar10ConvModel()
+    return model
+
+
 def get_model(modelname):
     if modelname == 'Cifar10Resnet20':
         model = torch.hub.load(
@@ -197,3 +248,24 @@ def get_model(modelname):
         raise NotImplementedError
 
     return model
+
+
+def pre_transform_dataset(dataset: Dataset) -> Dataset:
+    """
+    Pre-transform a givin dataset
+
+    Parameters
+    ----------
+    dataset: Dataset
+
+    Returns
+    -------
+    pre_transformed_dataset: Dataset
+    """
+    train_loader = DataLoader(
+        dataset, batch_size=len(dataset))
+    datapoints = []
+    for i in train_loader:
+        datapoints = i
+
+    return TransformedDataset(datapoints)
