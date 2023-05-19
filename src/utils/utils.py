@@ -9,6 +9,8 @@ from torchvision import transforms
 from src.data.make_housing_dataset import CaliforniaHousing
 from src.models.GB_quantile_regressor import GB_quantile_regressor
 from src.models.cifar10_conv_model import Cifar10ConvModel
+from src.models.lstm_model import LSTM
+from src.data.make_amzn_stock_price_dataset import AMZN_SP
 from src.models.regFNN import RegFNN
 from torch.utils.data import Dataset, DataLoader
 
@@ -86,6 +88,9 @@ def get_dataset(datasetname: str, train: bool = True, datapath: str = 'data/proc
     elif datasetname == 'CalHousing':
         return CaliforniaHousing(
             train, in_folder='data/raw', out_folder='data/processed')
+    elif datasetname == 'AMZN':
+        return AMZN_SP(
+            train, in_folder='data/raw', out_folder='data/processed')
 
 
 def get_metrics_score(output, target):
@@ -119,17 +124,17 @@ def accuracy(output, target, topk=(1,)):
 
 def get_logits_targets(model, loader, out_dim=1):
     """
-    Computing logits for model
+    Compute model's logits 
 
     Parameters
     ----------
-    model.
-    loader.
+    model: Model
+    loader: Dataloader
     out_dim: int
 
     Returns
     -------
-    dataset_logits 
+    dataset_logits: Dataset
     """
     logits = torch.zeros((len(loader.dataset), out_dim))
     labels = torch.zeros((len(loader.dataset),))
@@ -138,7 +143,7 @@ def get_logits_targets(model, loader, out_dim=1):
     with torch.no_grad():
         for x, targets in tqdm(loader):
             batch_logits = torch.tensor(
-                get_model_output(model, x.cpu())).T
+                get_model_output(model, x.cpu()))
             logits[i:(i+x.shape[0]), :] = batch_logits
             labels[i:(i+x.shape[0])] = targets.cpu()
             i = i + x.shape[0]
@@ -244,6 +249,13 @@ def get_model(modelname):
             model_median = pickle.load(p)
         model = GB_quantile_regressor(
             low=model_low, up=model_up, median=model_median)
+
+    elif modelname == 'LSTM_AMZN':
+        model = LSTM(1, 4, 2)
+        model.load_state_dict(torch.load("./models/trained_lstm_amzn.pt"))
+        model.eval()
+        model = torch.nn.DataParallel(model).cpu()
+
     else:
         raise NotImplementedError
 
@@ -269,3 +281,30 @@ def pre_transform_dataset(dataset: Dataset) -> Dataset:
         datapoints = i
 
     return TransformedDataset(datapoints)
+
+
+def get_lstm_model_std(inputs: torch.Tensor, num_repeats: int = 10, dropout_fraction: float = 0.4):
+    """
+    Compute model output variance using random dropout
+
+    Parameters
+    ----------
+    inputs: Tensor
+    num_repeats: int
+    dropout_fraction: float
+
+    Returns
+    -------
+    variance: float
+    """
+    # overwrite model droupout
+    model = LSTM(1, 4, 2, dropout_fraction)
+    model.load_state_dict(torch.load("models/trained_lstm_amzn.pt"))
+    model = torch.nn.DataParallel(model).cpu()
+
+    outputs = []
+    for _ in range(num_repeats):
+        output = model(inputs)
+        outputs.append(output)
+
+    return torch.std(torch.stack(outputs), dim=0)
