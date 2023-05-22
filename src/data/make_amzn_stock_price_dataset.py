@@ -6,7 +6,7 @@ import torch
 from copy import deepcopy as dc
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import Dataset
-import os
+
 import matplotlib.pyplot as plt
 
 
@@ -16,7 +16,7 @@ class AMZN_SP(Dataset):
         self.train = train
         self.in_folder = in_folder
         self.out_folder = out_folder
-        self.fname = 'AMZNtrain.csv'  # if train else 'AMZNtest.csv'
+        self.fname = 'AMZN.csv'  # if train else 'AMZNtest.csv'
         self.fpath = f'{self.in_folder}/{self.fname}'
 
         if self.out_folder:  # try loading from proprocessed
@@ -42,13 +42,13 @@ class AMZN_SP(Dataset):
         y = shifted_df_as_np[:, 0]
 
         X = dc(np.flip(X, axis=1))
-        # split_index = int(len(X) * 0.95)
-        # if self.train:
-        #     X = X[:split_index]
-        #     y = y[:split_index]
-        # else:
-        #     X = X[split_index:]
-        #     y = y[split_index:]
+        split_index = int(len(X) * 0.2)
+        if self.train:
+            X = X[split_index:]
+            y = y[split_index:]
+        else:
+            X = X[:split_index]
+            y = y[:split_index]
 
         self.data = torch.tensor(X.reshape((-1, lookback, 1))).float()
         self.targets = torch.tensor(y).float()

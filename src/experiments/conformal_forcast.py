@@ -102,7 +102,7 @@ if __name__ == "__main__":
         n_trials = 15
         alphas = [0.2, 0.1, 0.05]
         bsz = 16
-        n_data_conf = 200
+        n_data_conf = 225
         test_set = get_dataset(datasetname, train=False)
         cudnn.benchmark = True
         # Perform the experiment

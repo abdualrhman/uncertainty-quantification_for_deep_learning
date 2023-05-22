@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from src.data.make_amzn_stock_price_dataset import AMZN_SP
 from src.models.lstm_model import LSTM
-
+from torch.optim.lr_scheduler import StepLR, ExponentialLR
 
 train_set = AMZN_SP(train=True, in_folder='data/raw',
                     out_folder='data/processed')
@@ -17,20 +17,19 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 parser = argparse.ArgumentParser(description="Train file arguments")
-parser.add_argument("--lr", default=0.001)
-parser.add_argument("--num_epochs", default=10)
+parser.add_argument("--lr", default=0.002)
+parser.add_argument("--num_epochs", default=50)
 args = parser.parse_args()
 
 model = LSTM(1, 4, 2)
 model.to(device)
-learning_rate = 0.001
-num_epochs = 10
+learning_rate = float(args.lr)
+num_epochs = int(args.num_epochs)
 loss_function = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
+scheduler = StepLR(optimizer, gamma=0.94, step_size=3)
 print(len(train_set))
 print(len(test_set))
-# print(test_set.data.shape)
 
 
 def train_one_epoch(epoch):
@@ -50,8 +49,8 @@ def train_one_epoch(epoch):
         optimizer.step()
         if batch_index % 100 == 99:  # print every 100 batches
             avg_loss_across_batches = running_loss / 100
-            print('Batch {0}, Loss: {1:.3f}'.format(batch_index+1,
-                                                    avg_loss_across_batches))
+            # print('Batch {0}, Loss: {1:.3f}'.format(batch_index+1,
+            #                                         avg_loss_across_batches))
             running_loss = 0.0
     print()
 
@@ -69,8 +68,10 @@ def validate_one_epoch():
             running_loss += loss.item()
 
     avg_loss_across_batches = running_loss / len(test_loader)
-
-    print('Val Loss: {0:.3f}'.format(avg_loss_across_batches))
+    scheduler.step()
+    print(
+        f'Val Loss: {avg_loss_across_batches:.3f}, lr: {scheduler.get_last_lr()}'
+    )
     print('***************************************************')
     print()
 
