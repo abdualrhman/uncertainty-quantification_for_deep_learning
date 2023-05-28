@@ -38,7 +38,7 @@ def training() -> None:
     print("starting training loop:")
     validation_every_steps = 500
     step = 0
-    n_epoch = 10
+    n_epoch = 40
     train_accuracies = []
     valid_accuracies = []
     for epoch in range(n_epoch):
@@ -81,7 +81,7 @@ def training() -> None:
                     f"Step {step:<5}   training accuracy: {train_accuracies[-1]}")
                 print(f"             val accuracy: {valid_accuracies[-1]}")
     print("Finished training.")
-    torch.save(model.state_dict(), "models/trained_model.pt")
+    torch.save(model.state_dict(), "models/trained_conv_cifar10_model.pt")
 
     plt.plot(loss_tracker, "-")
     plt.xlabel("Training step")

@@ -1,32 +1,8 @@
 import argparse
 import torch
-from src.data.make_housing_dataset import CaliforniaHousing
-import torch.optim as optim
+from src.data.make_wine_quality_dataset import WineQuality
 from torch import nn
-import numpy as np
-from src.models.regFNN import RegFNN
-
-
-class QuantileLoss(nn.Module):
-    def __init__(self, quantiles):
-        super().__init__()
-        self.quantiles = quantiles
-
-    def forward(self, preds, target):
-        # assert not target.requires_grad
-        # assert preds.size(0) == target.size(0)
-        losses = []
-        for i, q in enumerate(self.quantiles):
-            errors = target - preds[:, i]
-            losses.append(
-                torch.max(
-                    (q-1) * errors,
-                    q * errors
-                ).unsqueeze(1))
-        loss = torch.mean(
-            torch.sum(torch.cat(losses, dim=1), dim=1))
-        return loss
-
+from src.models.quantile_net import QuantileNet, QuantileLoss
 
 def training() -> None:
     parser = argparse.ArgumentParser(description="Training arguments")
@@ -36,13 +12,13 @@ def training() -> None:
     torch.manual_seed(random_seed)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    train_set = CaliforniaHousing(
-        split="train", in_folder='data/raw', out_folder='data/processed')
+    train_set = WineQuality(
+        train=True, in_folder='data/raw', out_folder='data/processed')
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=32)
 
-    model = RegFNN()
+    model = QuantileNet(input_size=11)
     model = model.to(device)
-    criterion = QuantileLoss([0.05, 0.95])
+    criterion = QuantileLoss([0.1, 0.9])
     optimizer = torch.optim.Adam(
         model.parameters(), lr=5e-4, weight_decay=1e-6)
 
@@ -62,7 +38,8 @@ def training() -> None:
                       (i + 1, current_loss / 500))
                 current_loss = 0.0
     print('Training process has finished.')
-    torch.save(model.state_dict(), "models/trained_reg_fnn.pt")
+    torch.save(model.state_dict(),
+               "models/trained_quantile_net0.1_wine_quality.pt")
 
 
 if __name__ == "__main__":

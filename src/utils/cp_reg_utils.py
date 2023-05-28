@@ -1,3 +1,4 @@
+import warnings
 import torch
 import time
 import numpy as np
@@ -5,7 +6,15 @@ from numpy.typing import ArrayLike
 from typing import Tuple
 from src.models.CQR import CQR_logits
 from src.utils.utils import get_model_output, isTorchModel, AverageMeter
-from src.models.GB_quantile_regressor import ConformalizQuantileRegressor
+from src.models.gradient_boosting_quantile_regressor import ConformalPreComputedLogits
+
+
+def warn(*args, **kwargs):
+    pass
+
+
+warnings.warn = warn
+warnings.simplefilter("ignore", UserWarning)
 
 
 def split2(dataset, n1, n2):
@@ -21,7 +30,7 @@ def conformalize_regressor(model, loader_cal, alpha: float):
         return CQR_logits(
             model, loader_cal, alpha=alpha)
     else:
-        return ConformalizQuantileRegressor(alpha=alpha).fit_precomputed_logits(loader_cal)
+        return ConformalPreComputedLogits(alpha=alpha).fit_precomputed_logits(loader_cal)
 
 
 def validate(val_loader, cal_loader,  model, alpha: bool, precomputed_logits: bool = False, print_bool: bool = False) -> Tuple[float, float]:
@@ -39,7 +48,7 @@ def validate(val_loader, cal_loader,  model, alpha: bool, precomputed_logits: bo
                 S = x.T.detach().cpu().numpy()
             else:
                 model = conformalize_regressor(model, cal_loader, alpha)
-                S = get_model_output(model, x.cpu())
+                S = get_model_output(model, x.cpu()).detach().cpu().numpy()
             q_lo, q_hi = S
             leng = np.abs(q_hi - q_lo)
             cov = regression_coverage_score(target, q_lo, q_hi)

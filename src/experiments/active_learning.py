@@ -27,7 +27,6 @@ def trail(modelname, train_set, test_set, strategy, sample_size, n_init_training
     oracle.teach(40)
 
     return oracle.round_accuracies
-    # return np.random.randint(low=0, high=100, size=40)
 
 
 def experiment(modelname, train_set, test_set, n_trials, strategy, sample_size, n_init_training_labels, n_training_epochs, calib_size, alpha):
@@ -85,10 +84,3 @@ if __name__ == "__main__":
                         },
                        ignore_index=True)
         df.to_csv(cache_fname)
-
-    # Print the TeX table
-    # table_str = make_table(df, alpha_table)
-    # table = open(
-        # f"outputs/active_learning_CIFAR10_results".replace('.', '_') + ".tex", 'w')
-    # table.write(table_str)
-    # table.close()

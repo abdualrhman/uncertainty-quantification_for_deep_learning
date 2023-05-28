@@ -12,7 +12,8 @@ def training():
     X_train = train_set.data.numpy()
     y_train = train_set.targets.numpy()
 
-    quantiles = [0.05, 0.5, 0.95]
+    # quantiles = [0.05, 0.1, 0.2, 0.8, 0.9, 0.95]
+    quantiles = [0.1, 0.2, 0.8, 0.9]
     for quantile in quantiles:
         print(f"start training model for q{quantile}")
         params_distributions = dict(
@@ -24,7 +25,7 @@ def training():
         qr = GradientBoostingRegressor(alpha=quantile, loss='quantile')
         model = RandomizedSearchCV(qr, params_distributions)
         model.fit(X_train, y_train)
-        with open(f'models/trained_gbreg{quantile}.pkl', 'wb') as f:
+        with open(f'models/trained_gradientboost_regressor{quantile}_california_housing.pkl', 'wb') as f:
             pickle.dump(model, f)
     print("finished training")
 

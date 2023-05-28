@@ -9,11 +9,15 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 if __name__ == "__main__":
     dirpath = './.cache/active_learning_experiments'
-    sample_size = [1000]
+    sample_size = [500]
     datasetname = ['Cifar10']
     modelnames = ['Cifar10ConvModel']
-    strategies = ['least-confidence',
-                  'conformal-score:least-confidence', 'random-sampler', 'entropy-sampler']
+    strategies = [
+        'least-confidence',
+        'conformal-score:least-confidence',
+        'random-sampler',
+        # 'entropy-sampler'
+    ]
     params = list(itertools.product(
         datasetname, strategies, modelnames, sample_size))
 

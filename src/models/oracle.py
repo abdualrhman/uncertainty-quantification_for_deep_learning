@@ -101,15 +101,17 @@ class Oracle:
 
     def get_model_predictions(self, dataset):
         dataloader = torch.utils.data.DataLoader(
-            dataset, shuffle=False)
+            dataset,
+            batch_size=len(dataset),
+            shuffle=False)
         preds = torch.zeros(
             [len(dataset), len(np.unique(self.train_set.targets))])
         self.model.eval()
         with torch.no_grad():
-            for (x, _), idx in dataloader:
+            for (x, _), _ in dataloader:
                 out = self.model(x)
                 prob = F.softmax(out, dim=1)
-                preds[idx] = prob.cpu()
+                preds = prob.cpu()
         # self.model.train()
         return preds
 

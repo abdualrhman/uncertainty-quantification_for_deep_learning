@@ -11,20 +11,18 @@ from sklearn.pipeline import Pipeline
 from numpy.typing import ArrayLike
 
 
-class GB_quantile_regressor:
-    def __init__(self, low=GradientBoostingRegressor(alpha=0.05, loss='quantile'), up=GradientBoostingRegressor(alpha=0.95, loss='quantile'), median=GradientBoostingRegressor(alpha=0.5, loss='quantile')):
+class GBQuantileRegressor:
+    def __init__(self, low, up):
         self.low = low
         self.up = up
-        self.median = median
 
     def predict(self, inputs):
         y_pred_low = self.low.predict(inputs).reshape(-1, 1)
         y_pred_up = self.up.predict(inputs).reshape(-1, 1)
-        y_pred_median = self.median.predict(inputs)
-        return y_pred_median, np.stack([y_pred_low, y_pred_up], axis=1)
+        return np.concatenate([y_pred_low, y_pred_up], axis=1)
 
 
-class ConformalizQuantileRegressor(RegressorMixin, BaseEstimator):
+class ConformalPreComputedLogits(RegressorMixin, BaseEstimator):
     def __init__(
             self,
             alpha: float = 0.1) -> None:

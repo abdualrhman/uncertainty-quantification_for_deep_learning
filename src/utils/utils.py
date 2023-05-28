@@ -1,4 +1,5 @@
 import os
+import warnings
 import torch
 import pickle
 from sklearn.metrics import f1_score, precision_score, recall_score
@@ -7,12 +8,26 @@ import torchvision
 from torchvision import transforms
 # from src.data.make_cifar10_dataset import CIFAR10, get_aug_img_transformer
 from src.data.make_housing_dataset import CaliforniaHousing
-from src.models.GB_quantile_regressor import GB_quantile_regressor
+from src.data.make_wine_quality_dataset import WineQuality
+from src.models.gradient_boosting_quantile_regressor import GBQuantileRegressor
+from src.models.catBoost_quantile_regressor import CatBoostQunatileRegressor
 from src.models.cifar10_conv_model import Cifar10ConvModel
 from src.models.lstm_model import LSTM
 from src.data.make_amzn_stock_price_dataset import AMZN_SP
-from src.models.regFNN import RegFNN
+from src.models.quantile_net import QuantileNet
 from torch.utils.data import Dataset, DataLoader
+
+
+def warn(*args, **kwargs):
+    pass
+
+
+warnings.warn = warn
+warnings.simplefilter("ignore", UserWarning)
+
+
+def get_model_alpha(modelname: str) -> str:
+    return float(modelname.split(":")[-1])
 
 
 def get_aug_img_transformer():
@@ -79,14 +94,18 @@ class AverageMeter(object):
 
 
 def get_dataset(datasetname: str, train: bool = True, datapath: str = 'data/processed'):
+    split = 'train' if train else 'test'
     if datasetname == 'Cifar10':
         return torchvision.datasets.CIFAR10(train=train, root=datapath, download=True,
                                             transform=get_CIFAR10_img_transformer())
     elif datasetname == 'Cifar10Aug':
         return torchvision.datasets.CIFAR10(train=train, root=datapath, download=True,
                                             transform=get_aug_img_transformer())
-    elif datasetname == 'CalHousing':
+    elif datasetname == 'california_housing':
         return CaliforniaHousing(
+            split=split, in_folder='data/raw', out_folder='data/processed')
+    elif datasetname == 'wine_quality':
+        return WineQuality(
             train, in_folder='data/raw', out_folder='data/processed')
     elif datasetname == 'AMZN':
         return AMZN_SP(
@@ -124,7 +143,7 @@ def accuracy(output, target, topk=(1,)):
 
 def get_logits_targets(model, loader, out_dim=1):
     """
-    Compute model's logits 
+    Compute model's logits on a given dataloader
 
     Parameters
     ----------
@@ -142,8 +161,7 @@ def get_logits_targets(model, loader, out_dim=1):
     print(f'Computing logits for model (only happens once).')
     with torch.no_grad():
         for x, targets in tqdm(loader):
-            batch_logits = torch.tensor(
-                get_model_output(model, x.cpu()))
+            batch_logits = get_model_output(model, x.cpu())
             logits[i:(i+x.shape[0]), :] = batch_logits
             labels[i:(i+x.shape[0])] = targets.cpu()
             i = i + x.shape[0]
@@ -156,12 +174,12 @@ def get_logits_targets(model, loader, out_dim=1):
 
 def get_model_output(model, inputs):
     """
-    Get uniform output for implemented models
+    Get uniform tensor output for implemented models
     """
     if isTorchModel(model):
-        return model(inputs)
+        return torch.FloatTensor(model(inputs))
     else:
-        return model.predict(inputs)
+        return torch.FloatTensor(model.predict(inputs))
 
 
 def isTorchModel(model) -> bool:
@@ -182,21 +200,23 @@ def get_out_dataset_dim(datasetname: str) -> int:
     """
     if datasetname == 'Cifar10':
         return 10
-    elif datasetname == 'CalHousing':
+    elif datasetname == 'california_housing':
+        return 2
+    elif datasetname == 'wine_quality':
         return 2
     else:
         raise Exception("Unknown dataset")
 
 
-def get_logits_dataset(modelname, datasetname, datasetpath='', cache='src/experiments/.cache/'):
-    fname = cache + datasetname + '/' + modelname + '.pkl'
+def get_logits_dataset(modelname, datasetname, cache='.cache/'):
+    fname = cache + datasetname + '_precomputed_logits' + '/' + modelname + '.pkl'
     # If the file exists, load and return it.
     if os.path.exists(fname):
         with open(fname, 'rb') as handle:
             return pickle.load(handle)
     # Else we will load our model, run it on the dataset, and save/return the output.
-    model = get_model(modelname)
-    dataset = get_dataset(datasetname, split='test')
+    model = get_model(modelname, datasetname)
+    dataset = get_dataset(datasetname, train=False)
     # Check model type to get models logits and targets
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=32)
@@ -221,7 +241,7 @@ def get_untrained_model(modelname: str):
     return model
 
 
-def get_model(modelname):
+def get_model(modelname, datasetname=''):
     if modelname == 'Cifar10Resnet20':
         model = torch.hub.load(
             "chenyaofo/pytorch-cifar-models", "cifar10_resnet20",  pretrained=True)
@@ -234,21 +254,71 @@ def get_model(modelname):
         model.eval()
         model = torch.nn.DataParallel(model).cpu()
 
-    elif modelname == "RegFFN":
-        model = RegFNN()
-        model.load_state_dict(torch.load("./models/trained_reg_fnn.pt"))
+    elif modelname == "QuantileNet:0.05":
+        input_size = 8 if datasetname == 'california_housing' else 11
+        model = QuantileNet(input_size=input_size)
+        model.load_state_dict(torch.load(
+            f"./models/trained_quantile_net0.05_{datasetname}.pt"))
+        model.eval()
+        model = torch.nn.DataParallel(model).cpu()
+    elif modelname == "QuantileNet:0.1":
+        input_size = 8 if datasetname == 'california_housing' else 11
+        model = QuantileNet(input_size=input_size)
+        model.load_state_dict(torch.load(
+            f"./models/trained_quantile_net0.1_{datasetname}.pt"))
+        model.eval()
+        model = torch.nn.DataParallel(model).cpu()
+    elif modelname == "QuantileNet:0.2":
+        input_size = 8 if datasetname == 'california_housing' else 11
+        model = QuantileNet(input_size=input_size)
+        model.load_state_dict(torch.load(
+            f"./models/trained_quantile_net0.2_{datasetname}.pt"))
         model.eval()
         model = torch.nn.DataParallel(model).cpu()
 
-    elif modelname == "GBQuantileReg":
-        with open('./models/trained_gbreg0.05.pkl', 'rb') as p:
+    elif modelname == "GradientBoostingRegressor:0.05":
+        with open(f'./models/trained_gradientboost_regressor0.05_{datasetname}.pkl', 'rb') as p:
             model_low = pickle.load(p)
-        with open('./models/trained_gbreg0.95.pkl', 'rb') as p:
+        with open(f'./models/trained_gradientboost_regressor0.95_{datasetname}.pkl', 'rb') as p:
             model_up = pickle.load(p)
-        with open('./models/trained_gbreg0.5.pkl', 'rb') as p:
-            model_median = pickle.load(p)
-        model = GB_quantile_regressor(
-            low=model_low, up=model_up, median=model_median)
+        model = GBQuantileRegressor(
+            low=model_low, up=model_up)
+    elif modelname == "GradientBoostingRegressor:0.1":
+        with open(f'./models/trained_gradientboost_regressor0.1_{datasetname}.pkl', 'rb') as p:
+            model_low = pickle.load(p)
+        with open(f'./models/trained_gradientboost_regressor0.9_{datasetname}.pkl', 'rb') as p:
+            model_up = pickle.load(p)
+        model = GBQuantileRegressor(
+            low=model_low, up=model_up)
+    elif modelname == "GradientBoostingRegressor:0.2":
+        with open(f'./models/trained_gradientboost_regressor0.2_{datasetname}.pkl', 'rb') as p:
+            model_low = pickle.load(p)
+        with open(f'./models/trained_gradientboost_regressor0.8_{datasetname}.pkl', 'rb') as p:
+            model_up = pickle.load(p)
+        model = GBQuantileRegressor(
+            low=model_low, up=model_up)
+
+    elif modelname == "CatBoostingRegressor:0.05":
+        with open(f'./models/trained_catboost_regressor0.05_{datasetname}.pkl', 'rb') as p:
+            model_low = pickle.load(p)
+        with open(f'./models/trained_catboost_regressor0.95_{datasetname}.pkl', 'rb') as p:
+            model_up = pickle.load(p)
+        model = CatBoostQunatileRegressor(
+            low=model_low, up=model_up)
+    elif modelname == "CatBoostingRegressor:0.1":
+        with open(f'./models/trained_catboost_regressor0.1_{datasetname}.pkl', 'rb') as p:
+            model_low = pickle.load(p)
+        with open(f'./models/trained_catboost_regressor0.9_{datasetname}.pkl', 'rb') as p:
+            model_up = pickle.load(p)
+        model = CatBoostQunatileRegressor(
+            low=model_low, up=model_up)
+    elif modelname == "CatBoostingRegressor:0.2":
+        with open(f'./models/trained_catboost_regressor0.2_{datasetname}.pkl', 'rb') as p:
+            model_low = pickle.load(p)
+        with open(f'./models/trained_catboost_regressor0.8_{datasetname}.pkl', 'rb') as p:
+            model_up = pickle.load(p)
+        model = CatBoostQunatileRegressor(
+            low=model_low, up=model_up)
 
     elif modelname == 'LSTM_AMZN':
         model = LSTM(1, 4, 2)
@@ -257,6 +327,7 @@ def get_model(modelname):
         model = torch.nn.DataParallel(model).cpu()
 
     else:
+        print(modelname)
         raise NotImplementedError
 
     return model

@@ -9,11 +9,6 @@ import pathlib
 import os
 import pickle
 from tqdm import tqdm
-import pdb
-from src.data.make_cifar10_dataset import CIFAR10, get_img_transformer
-from src.models.cifar10_conv_model import Cifar10ConvModel
-from src.models.GB_quantile_regressor import GB_quantile_regressor
-from src.models.regFNN import RegFNN
 from src.utils.utils import *
 
 
@@ -147,7 +142,7 @@ def get_logits_targets(model, loader):
     return dataset_logits
 
 
-def get_logits_dataset(modelname, datasetname, datasetpath='', cache='src/experiments/.cache/'):
+def get_logits_dataset(modelname, datasetname, datasetpath='', cache='.cache/'):
     fname = cache + datasetname + '/' + modelname + '.pkl'
 
     # If the file exists, load and return it.
