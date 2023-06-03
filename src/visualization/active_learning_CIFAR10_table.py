@@ -1,3 +1,4 @@
+from cProfile import label
 import itertools
 import os
 import sys
@@ -9,21 +10,22 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 if __name__ == "__main__":
     dirpath = './.cache/active_learning_experiments'
-    sample_size = [500]
+    sample_size = 1000
     datasetname = ['Cifar10']
     modelnames = ['Cifar10ConvModel']
     strategies = [
         'least-confidence',
-        'conformal-score:least-confidence',
+        # 'conformal-score:least-confidence',
+        'conformal-score:largest-set',
         'random-sampler',
-        # 'entropy-sampler'
+        'entropy-sampler'
     ]
     params = list(itertools.product(
-        datasetname, strategies, modelnames, sample_size))
+        datasetname, strategies, modelnames))
 
     fig = plt.figure(figsize=(8, 11))
-    for datasetname, strategy, modelname, sample_size in params:
-        cache_fname = f"{dirpath}/{datasetname}_{strategy}_{modelname}_{sample_size}.csv"
+    for datasetname, strategy, modelname in params:
+        cache_fname = f"{dirpath}/{datasetname}_{strategy}_{modelname}_1000.csv"
         df = pd.read_csv(cache_fname)
         str_arr = df.round_accuries.values
         # convert string to np array
@@ -45,6 +47,11 @@ if __name__ == "__main__":
         plt.plot(avg+std, ':', color=plt_color,
                  label=f"{strategy.replace('-', ' ')} ± std")
         plt.plot(avg-std, ':', color=plt_color)
-        plt.legend()
-        plt.grid()
-    plt.savefig(f'reports/figures/active_learning_CIFAR10_{sample_size}')
+    plt.axhline(y=0.702, color='gray',
+                linestyle='--', label='model accuracy')
+    plt.legend()
+    plt.ylabel('Model accuracy')
+    plt.xlabel('Round')
+    plt.title("Active learning round accuracies")
+    plt.grid()
+    plt.savefig(f'reports/figures/active_learning_CIFAR10_1000')

@@ -1,12 +1,16 @@
+import torch.nn as nn
+import numpy as np
+import sys
+import torch.nn.functional as F
 import os
 import warnings
 import torch
 import pickle
+from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import f1_score, precision_score, recall_score
 from tqdm import tqdm
 import torchvision
 from torchvision import transforms
-# from src.data.make_cifar10_dataset import CIFAR10, get_aug_img_transformer
 from src.data.make_housing_dataset import CaliforniaHousing
 from src.data.make_wine_quality_dataset import WineQuality
 from src.models.gradient_boosting_quantile_regressor import GBQuantileRegressor
@@ -15,7 +19,7 @@ from src.models.cifar10_conv_model import Cifar10ConvModel
 from src.models.lstm_model import LSTM
 from src.data.make_amzn_stock_price_dataset import AMZN_SP
 from src.models.quantile_net import QuantileNet
-from torch.utils.data import Dataset, DataLoader
+from src.models.resnet_with_dropout import ResNetWithDropout
 
 
 def warn(*args, **kwargs):
@@ -247,10 +251,17 @@ def get_model(modelname, datasetname=''):
             "chenyaofo/pytorch-cifar-models", "cifar10_resnet20",  pretrained=True)
         model.eval()
         model = torch.nn.DataParallel(model).cpu()
+    elif modelname == 'Cifar10Resnet20MCD':
+        model = torch.hub.load(
+            "chenyaofo/pytorch-cifar-models", "cifar10_resnet20",  pretrained=True)
+        model = ResNetWithDropout(resnet=model)
+        model.eval()
+        model = torch.nn.DataParallel(model).cpu()
 
     elif modelname == "Cifar10ConvModel":
         model = Cifar10ConvModel()
-        model.load_state_dict(torch.load("./models/trained_model.pt"))
+        model.load_state_dict(torch.load(
+            "./models/trained_conv_cifar10_model.pt"))
         model.eval()
         model = torch.nn.DataParallel(model).cpu()
 
@@ -379,3 +390,120 @@ def get_lstm_model_std(inputs: torch.Tensor, num_repeats: int = 10, dropout_frac
         outputs.append(output)
 
     return torch.std(torch.stack(outputs), dim=0)
+
+
+def enable_dropout(model):
+    """ Function to enable the dropout layers during test-time """
+    for m in model.modules():
+        if m.__class__.__name__.startswith('Dropout'):
+            m.train()
+
+
+def get_monte_carlo_prediction_sets(val_loader,
+                                    forward_passes,
+                                    model,
+                                    n_classes,
+                                    n_samples, alpha, randomized=True):
+    """Get the monte-carlo samples and uncertainty estimates
+    through multiple forward passes
+
+    Parameters
+    ----------
+    data_loader : object
+        data loader object from the data loader module
+    forward_passes : int
+        number of monte-carlo samples/forward passes
+    model : object
+        keras model
+    n_classes : int
+        number of classes in the dataset
+    n_samples : int
+        number of samples in the test set
+    alpha: float
+
+    Returns
+    ---------
+    mean : ArrayLike
+        class probability across predictions
+    S : ArrayLike
+        (1-alpha)% prediction set
+
+    """
+
+    dropout_predictions = np.empty((0, n_samples, n_classes))
+    softmax = nn.Softmax(dim=1)
+    for i in range(forward_passes):
+        predictions = np.empty((0, n_classes))
+        model.eval()
+        enable_dropout(model)
+        for i, (image, label) in enumerate(val_loader):
+            image = image.to(torch.device('cpu'))
+            with torch.no_grad():
+                output = model(image)
+                output = softmax(output)  # shape (n_samples, n_classes)
+            predictions = np.vstack((predictions, output.cpu().numpy()))
+
+        dropout_predictions = np.vstack((dropout_predictions,
+                                         predictions[np.newaxis, :, :]))
+    mean = np.mean(dropout_predictions, axis=0)  # shape (n_samples, n_classes)
+    # make prediction sets
+    S = []
+    for pred_prob in mean:
+        sorted_classes = np.argsort(-pred_prob)
+        prediction_set = []
+        total_probability = 0.0
+
+        for class_ in sorted_classes:
+            prediction_set.append(class_)
+            total_probability += pred_prob[class_]
+            if total_probability >= 1-alpha:
+                # randomly remove last class from prediction set
+                if randomized and np.random.randint(2) == 0 and len(prediction_set) > 1:
+                    prediction_set.pop()
+                break
+        S.append(prediction_set)
+    return mean, S
+
+
+def validate_monte_carlo_prediction(val_loader, predictions_sets):
+    """ Validate monte-carlor prediction sets
+
+    Parameters
+    ----------
+    val_loader : object
+        data loader object from the data loader module
+    predictions_sets : ArrayLike
+        monte-carlo prediction sets
+
+    Returns
+    ---------
+    coverage : float
+    set_size : float
+    f1_score : float
+    """
+    size = AverageMeter('size')
+    coverage = AverageMeter('coverage')
+    f1_scores = AverageMeter('f1_scores')
+    pred_set_loader = torch.utils.data.DataLoader(
+        predictions_sets, batch_size=val_loader.batch_size, shuffle=False, collate_fn=lambda x: x)
+    for S, (_, y) in zip(pred_set_loader, val_loader):
+        top1s = []
+        [top1s.append(p_set[0]) for p_set in S]
+        S_tensor = [torch.tensor(sublist) for sublist in S]
+        cov, sz = coverage_size(S_tensor, y)
+        f1 = f1_score(y_true=y.detach().cpu(),
+                      y_pred=top1s, average='macro', zero_division=0)
+        coverage.update(cov)
+        size.update(sz)
+        f1_scores.update(f1)
+    return coverage.avg, size.avg, f1_scores.avg
+
+
+def coverage_size(S, targets):
+    covered = 0
+    size = 0
+    for i in range(targets.shape[0]):
+        if (targets[i].item() in S[i]):
+            covered += 1
+        size = size + S[i].shape[0]
+    return float(covered)/targets.shape[0], size/targets.shape[0]

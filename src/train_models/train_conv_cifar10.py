@@ -38,10 +38,11 @@ def training() -> None:
     print("starting training loop:")
     validation_every_steps = 500
     step = 0
-    n_epoch = 40
+    n_epoch = 20
     train_accuracies = []
     valid_accuracies = []
     for epoch in range(n_epoch):
+        print(f"epoch: {epoch+1}")
         loss_tracker = []
         train_accuracies_batches = []
         for batch in train_dataloader:

@@ -4,28 +4,23 @@ import torch
 import numpy as np
 import torch.nn as nn
 import matplotlib.pyplot as plt
-
+import torchvision
 from torch.utils.data import DataLoader
+from src.utils.utils import get_CIFAR10_img_transformer
 import pandas as pd
+from src.models.cifar10_conv_model import Cifar10ConvModel
+from src.models.oracle import Oracle
 
-from src.data.make_wine_quality_dataset import WineQuality
-from src.data.make_housing_dataset import CaliforniaHousing
-from src.models.catBoost_quantile_regressor import CatBoostQunatileRegressor
-from src.utils.cp_reg_utils import regression_coverage_score
-
-
-test_set = CaliforniaHousing(
-    split='test', in_folder='data/raw', out_folder='data/processed')
-
-datasetname = 'california_housing'
-with open(f'./models/trained_catboost_reg0.05_{datasetname}.pkl', 'rb') as p:
-    model_low = pickle.load(p)
-with open(f'./models/trained_catboost_reg0.95_{datasetname}.pkl', 'rb') as p:
-    model_up = pickle.load(p)
-with open(f'./models/trained_catboost_reg0.5_{datasetname}.pkl', 'rb') as p:
-    model_median = pickle.load(p)
-model = CatBoostQunatileRegressor(
-    low=model_low, up=model_up, median=model_median)
+train_set = torchvision.datasets.CIFAR10(
+    train=True, download=True, root='data/processed', transform=get_CIFAR10_img_transformer())
+test_set = torchvision.datasets.CIFAR10(
+    train=False, download=True, root='data/processed', transform=get_CIFAR10_img_transformer())
+model = Cifar10ConvModel()
+l = Oracle(model, train_set=train_set, sample_size=1000, test_set=test_set,
+           n_init_training_labels=1000, strategy="conformal-prediction:least-confidence")
 
 
-print(model.predict(test_set.data.numpy()))
+idx, data = l.get_unlabeled_data()
+preds = l.get_model_conformal_predictions(data)
+uncertainties = preds.max(1)[0]
+

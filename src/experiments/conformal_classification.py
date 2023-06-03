@@ -1,20 +1,15 @@
 from src.models.conformal_model import *
+import argparse
 import pandas as pd
 from tqdm import tqdm
 import itertools
 import torch.backends.cudnn as cudnn
 import random
-import torchvision.transforms as tf
-import torchvision
-import torch.utils.data as tdata
 import torch
-# from scipy.stats import median_absolute_deviation as mad
-from scipy.special import softmax
 import numpy as np
 from src.utils.cp_utils import *
 import os
 import sys
-import inspect
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 
@@ -63,7 +58,7 @@ def make_table(df, alpha):
     return table
 
 
-def trial(model, logits, alpha, kreg, lamda, randomized, n_data_conf, n_data_val, pct_paramtune, bsz, naive_bool):
+def trial(model, logits, alpha, kreg, lamda, randomized, n_data_conf, pct_paramtune, bsz, naive_bool):
     logits_cal, logits_val = split2(logits, n_data_conf, len(
         logits)-n_data_conf)  # A new random split for every trial
     # Prepare the loaders
@@ -80,7 +75,7 @@ def trial(model, logits, alpha, kreg, lamda, randomized, n_data_conf, n_data_val
     return top1_avg, top5_avg, f1score_avg, cvg_avg, sz_avg
 
 
-def experiment(modelname, datasetname, datasetpath, num_trials, alpha, kreg, lamda, randomized, n_data_conf, n_data_val, pct_paramtune, bsz, predictor):
+def experiment(modelname, datasetname, num_trials, alpha, kreg, lamda, randomized, n_data_conf, pct_paramtune, bsz, predictor):
     # Experiment logic
     naive_bool = predictor == 'Naive'
     # fixed_bool = predictor == 'Fixed'
@@ -89,7 +84,7 @@ def experiment(modelname, datasetname, datasetpath, num_trials, alpha, kreg, lam
         lamda = 0  # No regularization.
 
     # Data Loading
-    logits = get_logits_dataset(modelname, datasetname, datasetpath)
+    logits = get_logits_dataset(modelname, datasetname)
 
     # Instantiate and wrap model
     model = get_model(modelname)
@@ -102,7 +97,7 @@ def experiment(modelname, datasetname, datasetpath, num_trials, alpha, kreg, lam
     sizes = np.zeros((num_trials,))
     for i in tqdm(range(num_trials)):
         top1_avg, top5_avg, f1score_avg, cvg_avg, sz_avg = trial(
-            model, logits, alpha, kreg, lamda, randomized, n_data_conf, n_data_val, pct_paramtune, bsz, naive_bool)
+            model, logits, alpha, kreg, lamda, randomized, n_data_conf, pct_paramtune, bsz, naive_bool)
         top1s[i] = top1_avg
         top5s[i] = top5_avg
         f1scores[i] = f1score_avg
@@ -115,59 +110,58 @@ def experiment(modelname, datasetname, datasetpath, num_trials, alpha, kreg, lam
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Exeriment arguments")
+    parser.add_argument("--dataset", default="Cifar10")
+    parser.add_argument("--num_trials", default=50)
+    args = parser.parse_args()
+
     # Fix randomness
     seed = 0
     np.random.seed(seed=seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     random.seed(seed)
-    cache_fname = "./.cache/cifar10_df.csv"
+    datasetname = args.dataset
+    cache_fname = f".cache/classification_conformal_prediction_{datasetname}.csv"
     alpha_table = 0.1
     try:
         df = pd.read_csv(cache_fname)
     except:
         # Configure experiment
-        # modelnames = ['Cifar10ConvModel','ResNet152','ResNet101','ResNet50','ResNet18','DenseNet161','VGG16','Inception','ShuffleNet']
         modelnames = ['Cifar10ConvModel', 'Cifar10Resnet20']
-        alphas = [0.05, 0.10]
-        predictors = ['Fixed', 'Naive', 'APS', 'RAPS']
+        alphas = [0.1]
+        predictors = ['Naive', 'APS', 'RAPS']
         params = list(itertools.product(modelnames, alphas, predictors))
         m = len(params)
-        datasetname = 'Cifar10'
-        datasetpath = '/scratch/group/ilsvrc/val/'
-        num_trials = 1
+        num_trials = int(args.num_trials)
         kreg = None
         lamda = None
         randomized = True
-        n_data_conf = 5000
-        n_data_val = 5000
+        n_data_conf = 1000
         pct_paramtune = 0.33
-        bsz = 32
+        bsz = 9000
         cudnn.benchmark = True
 
         # Perform the experiment
         df = pd.DataFrame(
-            columns=["Model", "Predictor", "Top1", "Top5", "alpha", "Coverage", "Size"])
+            columns=["Model", "Predictor", "Coverage", "Size"])
         for i in range(m):
             modelname, alpha, predictor = params[i]
             print(
                 f'Model: {modelname} | Desired coverage: {1-alpha} | Predictor: {predictor}')
 
-            out = experiment(modelname, datasetname, datasetpath, num_trials,
-                             params[i][1], kreg, lamda, randomized, n_data_conf, n_data_val, pct_paramtune, bsz, predictor)
+            out = experiment(modelname, datasetname, num_trials,
+                             params[i][1], kreg, lamda, randomized, n_data_conf, pct_paramtune, bsz, predictor)
             df = df.append({"Model": modelname,
                             "Predictor": predictor,
-                            "Top1": np.round(out[0], 3),
-                            "Top5": np.round(out[1], 3),
                             "F1": np.round(out[2], 3),
-                            "alpha": alpha,
                             "Coverage": np.round(out[3], 3),
                             "Size":
                             np.round(out[4], 3)}, ignore_index=True)
         df.to_csv(cache_fname)
     # Print the TeX table
-    table_str = make_table(df, alpha_table)
-    table = open(
-        f"outputs/cifar10results_{alpha_table}".replace('.', '_') + ".tex", 'w')
-    table.write(table_str)
-    table.close()
+    # table_str = make_table(df, alpha_table)
+    # table = open(
+    #     f"outputs/cifar10results_{alpha_table}".replace('.', '_') + ".tex", 'w')
+    # table.write(table_str)
+    # table.close()

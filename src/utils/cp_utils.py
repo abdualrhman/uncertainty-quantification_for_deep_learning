@@ -50,8 +50,6 @@ def validate(val_loader, model, print_bool):
         top1 = AverageMeter('top1')
         top5 = AverageMeter('top5')
         f1score = AverageMeter('f1score')
-        # precision = AverageMeter('precision score')
-        # recall = AverageMeter('recall score')
         coverage = AverageMeter('RAPS coverage')
         size = AverageMeter('RAPS size')
 
@@ -89,16 +87,6 @@ def validate(val_loader, model, print_bool):
         print('')  # Endline
 
     return top1.avg, top5.avg, f1score.avg, coverage.avg, size.avg
-
-
-def coverage_size(S, targets):
-    covered = 0
-    size = 0
-    for i in range(targets.shape[0]):
-        if (targets[i].item() in S[i]):
-            covered += 1
-        size = size + S[i].shape[0]
-    return float(covered)/targets.shape[0], size/targets.shape[0]
 
 
 def data2tensor(data):
@@ -142,26 +130,26 @@ def get_logits_targets(model, loader):
     return dataset_logits
 
 
-def get_logits_dataset(modelname, datasetname, datasetpath='', cache='.cache/'):
-    fname = cache + datasetname + '/' + modelname + '.pkl'
+# def get_logits_dataset(modelname, datasetname, datasetpath='', cache='.cache/'):
+#     fname = cache + datasetname + '/' + modelname + '.pkl'
 
-    # If the file exists, load and return it.
-    if os.path.exists(fname):
-        with open(fname, 'rb') as handle:
-            return pickle.load(handle)
+#     # If the file exists, load and return it.
+#     if os.path.exists(fname):
+#         with open(fname, 'rb') as handle:
+#             return pickle.load(handle)
 
-    # Else we will load our model, run it on the dataset, and save/return the output.
-    model = get_model(modelname)
-    dataset = get_dataset(datasetname, split='test')
-    loader = torch.utils.data.DataLoader(
-        dataset, batch_size=32)
+#     # Else we will load our model, run it on the dataset, and save/return the output.
+#     model = get_model(modelname)
+#     dataset = get_dataset(datasetname, train=False)
+#     loader = torch.utils.data.DataLoader(
+#         dataset, batch_size=32)
 
-    # Get the logits and targets
-    dataset_logits = get_logits_targets(model, loader)
+#     # Get the logits and targets
+#     dataset_logits = get_logits_targets(model, loader)
 
-    # Save the dataset
-    os.makedirs(os.path.dirname(fname), exist_ok=True)
-    with open(fname, 'wb') as handle:
-        pickle.dump(dataset_logits, handle, protocol=pickle.HIGHEST_PROTOCOL)
+#     # Save the dataset
+#     os.makedirs(os.path.dirname(fname), exist_ok=True)
+#     with open(fname, 'wb') as handle:
+#         pickle.dump(dataset_logits, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    return dataset_logits
+#     return dataset_logits
