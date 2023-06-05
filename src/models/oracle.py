@@ -33,7 +33,6 @@ class Oracle:
                  test_set: Dataset,
                  sample_size: int,
                  strategy: str,
-                 task: str = "classification",
                  n_init_training_labels: int = 0,
                  n_training_epochs: int = 2,
                  alpha: float = 0.1,
@@ -45,7 +44,6 @@ class Oracle:
         self.train_set = train_set
         self.test_set = test_set
         self.strategy = strategy
-        self.task = task
         self.sample_size = sample_size
         self.n_init_training_labels = n_init_training_labels
         self.n_training_epochs = n_training_epochs
@@ -56,20 +54,13 @@ class Oracle:
         self.round_accuracies = []
         self.round_coverage = []
         self.round_avg_length = []
+        self.lr = 0.001
 
-        if self.task == "classification":
-            self.criterion = torch.nn.CrossEntropyLoss()
-        else:
-            q_lo = self.alpha/2
-            q_up = 1 - (self.alpha/2)
-            self.criterion = QuantileLoss([q_lo, q_up])
-        self.weight_decay = 0 if task == 'classification' else 1e-6
-        self.lr = 0.001 if task == 'classification' else 5e-4
+        # conformalize the model
         if self.strategy.startswith("conformal-score"):
             if calib_size >= len(train_set):
                 raise ValueError(
                     "Invalid calibration size")
-            # conformalize the model
             self.init_conformal_model()
 
         if n_init_training_labels > 0:
@@ -98,15 +89,16 @@ class Oracle:
     def train_model(self, train_set):
         # _, train_data = self.get_labeled_data()
         train_loader = torch.utils.data.DataLoader(
-            train_set, shuffle=False, batch_size=32)
+            train_set, shuffle=False, batch_size=128)
         self.model.train()
         optimizer = optim.Adam(self.model.parameters(),
-                               lr=self.lr, weight_decay=self.weight_decay)
+                               lr=0.001)
+        criterion = torch.nn.CrossEntropyLoss()
         for epoch in range(self.n_training_epochs):
             for (x, y), _ in train_loader:
                 optimizer.zero_grad()
                 output = self.model(x.to(self.device))
-                loss = self.criterion(output, y.to(self.device))
+                loss = criterion(output, y.to(self.device))
                 loss.backward()
                 optimizer.step()
 
@@ -115,21 +107,12 @@ class Oracle:
         test_loader = torch.utils.data.DataLoader(
             self.test_set, batch_size=len(self.test_set))
         acc = 0.0
-        if self.task == 'classification':
-            with torch.no_grad():
-                for x, y in test_loader:
-                    out = self.model(x)
-                    preds = out.max(1)[1]
-                    acc = self.accuracy(y, preds)
-            self.round_accuracies.append(acc)
-        else:
-            with torch.no_grad():
-                for x, y in test_loader:
-                    q_lo, q_up = self.model(x)
-                    leng = np.abs(q_up - q_lo)
-                    cov = regression_coverage_score(y, q_lo, q_up)
-            self.round_coverage.append(cov)
-            self.round_avg_length.append(leng)
+        with torch.no_grad():
+            for x, y in test_loader:
+                out = self.model(x)
+                preds = out.max(1)[1]
+                acc = self.accuracy(y, preds)
+        self.round_accuracies.append(acc)
 
     def get_model_predictions(self, dataset):
         dataloader = torch.utils.data.DataLoader(

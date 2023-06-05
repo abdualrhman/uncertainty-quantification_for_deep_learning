@@ -1,4 +1,5 @@
 import argparse
+import random
 import warnings
 import pandas as pd
 from tqdm import tqdm
@@ -29,21 +30,27 @@ def trial(model, val_loader, alpha, n_forward_passes, n_classes, n_samples):
     return coverage_avg, size_avg, f1_avg
 
 
-def experiment(modelname, datasetname, num_trials, n_forward_passes, alpha):
+def experiment(modelname, datasetname, val_set_size, num_trials, n_forward_passes, alpha):
     # Data Loading
-    val_set = get_dataset(datasetname, train=False)
-    val_loader = DataLoader(val_set, batch_size=len(val_set), shuffle=False)
+    dataset = get_dataset(datasetname, train=False)
+    # pre transform to speed up the experiments
+    pre_transformed_dataset = pre_transform_dataset(dataset)
+    rand_indices = random.sample(range(len(dataset)), val_set_size)
+    val_dataset = torch.utils.data.Subset(
+        indices=rand_indices, dataset=pre_transformed_dataset)
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset, batch_size=128, shuffle=False)
+
     # Instantiate and wrap model
     model = get_model(modelname, datasetname)
     # Perform experiment
     sizes = np.zeros((num_trials,))
     coverages = np.zeros((num_trials,))
     f1_scores = np.zeros((num_trials,))
-    n_classes = np.unique(val_set.targets).max()+1
-    n_samples = len(val_set.targets)
+    n_classes = np.unique(pre_transformed_dataset.targets).max()+1
     for i in tqdm(range(num_trials)):
         cvg_avg, sze_avg, f1_avg = trial(
-            model=model, val_loader=val_loader, alpha=alpha, n_classes=n_classes, n_samples=n_samples, n_forward_passes=n_forward_passes)
+            model=model, val_loader=val_loader, alpha=alpha, n_classes=n_classes, n_samples=val_set_size, n_forward_passes=n_forward_passes)
         coverages[i] = cvg_avg
         sizes[i] = sze_avg
         f1_scores[i] = f1_avg
@@ -71,6 +78,7 @@ if __name__ == "__main__":
         n_forward_passes = int(args.n_forward_passes)
         num_trials = int(args.num_trials)
         cudnn.benchmark = True
+        val_set_size = 9000
         # Perform the experiment
         df = pd.DataFrame(
             columns=["Model", "Coverage", "Size", "F1"])
@@ -79,7 +87,7 @@ if __name__ == "__main__":
             print(
                 f'Model: {modelname} | Desired coverage: {1-alpha}')
 
-            out = experiment(modelname=modelname, datasetname=datasetname,
+            out = experiment(modelname=modelname, datasetname=datasetname, val_set_size=val_set_size,
                              num_trials=num_trials, n_forward_passes=n_forward_passes, alpha=alpha)
             df = df.append({"Model": modelname,
                             "Coverage": np.round(out[0], 3),

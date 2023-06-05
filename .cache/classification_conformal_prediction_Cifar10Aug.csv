@@ -1,0 +1,7 @@
+,Model,Predictor,Coverage,Size,F1
+0,Cifar10ConvModel,Naive,0.843,3.249,0.544
+1,Cifar10ConvModel,APS,0.902,4.063,0.545
+2,Cifar10ConvModel,RAPS,0.899,4.062,0.545
+3,Cifar10Resnet20,Naive,0.736,2.608,0.522
+4,Cifar10Resnet20,APS,0.901,4.883,0.521
+5,Cifar10Resnet20,RAPS,0.901,4.917,0.521

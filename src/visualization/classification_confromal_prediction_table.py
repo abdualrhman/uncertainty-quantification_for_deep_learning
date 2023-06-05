@@ -49,7 +49,7 @@ if __name__ == "__main__":
         df = pd.read_csv(cache_fname)
         CQR_table_str = make_table(df)
         table = open(
-            f"reports/tables/classification-conformal-prediction-table.tex", 'w')
+            f"reports/tables/classification-conformal-prediction-table-{datasetname}.tex", 'w')
         table.write(CQR_table_str)
         table.close()
     except:

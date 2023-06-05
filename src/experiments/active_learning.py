@@ -12,9 +12,6 @@ from src.models.oracle import Oracle
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 
-def get_teaching_round_num(sample_size, trainset_size):
-    return 1
-
 
 def trail(modelname, train_set, test_set, strategy, sample_size, n_init_training_labels, n_training_epochs, calib_size, alpha):
 

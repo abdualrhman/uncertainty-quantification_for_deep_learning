@@ -202,7 +202,7 @@ def get_out_dataset_dim(datasetname: str) -> int:
     -------
     out_dim: int 
     """
-    if datasetname == 'Cifar10':
+    if datasetname == 'Cifar10' or 'Cifar10Aug':
         return 10
     elif datasetname == 'california_housing':
         return 2

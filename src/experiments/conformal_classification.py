@@ -139,7 +139,7 @@ if __name__ == "__main__":
         randomized = True
         n_data_conf = 1000
         pct_paramtune = 0.33
-        bsz = 9000
+        bsz = 128
         cudnn.benchmark = True
 
         # Perform the experiment
