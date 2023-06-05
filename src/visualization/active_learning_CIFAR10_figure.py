@@ -5,27 +5,32 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import argparse
+
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Exeriment arguments")
+    parser.add_argument("--dataset", default="Cifar10")
+    args = parser.parse_args()
+    datasetname = args.dataset
     dirpath = './.cache/active_learning_experiments'
     sample_size = 1000
-    datasetname = ['Cifar10']
+    datasetname = args.dataset
     modelnames = ['Cifar10ConvModel']
     strategies = [
         'least-confidence',
         # 'conformal-score:least-confidence',
-        'conformal-score:largest-set',
+        # 'conformal-score:largest-set',
         'random-sampler',
-        'entropy-sampler'
+        # 'entropy-sampler'
     ]
-    params = list(itertools.product(
-        datasetname, strategies, modelnames))
+    params = list(itertools.product(strategies, modelnames))
 
     fig = plt.figure(figsize=(8, 11))
-    for datasetname, strategy, modelname in params:
-        cache_fname = f"{dirpath}/{datasetname}_{strategy}_{modelname}_1000.csv"
+    for strategy, modelname in params:
+        cache_fname = f"{dirpath}/{datasetname}_{strategy}_{modelname}_{sample_size}.csv"
         df = pd.read_csv(cache_fname)
         str_arr = df.round_accuries.values
         # convert string to np array
@@ -54,4 +59,4 @@ if __name__ == "__main__":
     plt.xlabel('Round')
     plt.title("Active learning round accuracies")
     plt.grid()
-    plt.savefig(f'reports/figures/active_learning_CIFAR10_1000')
+    plt.savefig(f'reports/figures/active_learning_{datasetname}_{sample_size}')
