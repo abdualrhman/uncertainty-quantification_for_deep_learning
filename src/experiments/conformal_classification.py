@@ -1,5 +1,3 @@
-from torch.serialization import SourceChangeWarning
-import warnings
 from src.models.conformal_classifier import *
 import argparse
 import pandas as pd

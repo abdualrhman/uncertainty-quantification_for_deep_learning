@@ -13,3 +13,4 @@ setuptools==67.6.0
 torch==1.13.1
 torchvision==0.15.2
 tqdm==4.64.1
+gdown
