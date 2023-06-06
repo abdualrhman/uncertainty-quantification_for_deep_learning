@@ -34,9 +34,9 @@ This repository contains the code used in the production of results for the thes
     │   │   ├── make_wine_quality_dataset.py
     │   │    make_cifar10_dataset.py
     │   │
+    │   ├── train_models  <- Scripts to train models and then use trained models
     │   │
     │   ├── models  <- Models used for experiments
-    │   │     ├── train_models  <- Scripts to train models and then use trained models
     |   |     ├── catBoost_quantile_regressor.py
     |   |     ├── cifar10_conv_model.py
     |   |     ├── conformal_classifier.py
@@ -47,6 +47,12 @@ This repository contains the code used in the production of results for the thes
     |   |     ├── oracle.py  <- Base class used for active learning
     |   |     └── quantile_net.py
     |   |
+    │   ├── models  <- Scripts to run the experiments
+    |   |     ├── active_learning.py
+    |   |     ├── conformal_classification.py
+    |   |     ├── conformal_regression.py
+    |   |     ├── conformal_time_series.py
+    |   |     └── monte-carlo-dropout.py
     │   │
     │   └── visualization  <- Scripts to generate LaTeX tables and figures from experiment results
     │
@@ -95,6 +101,8 @@ To reproduce figures, use the following command:
 ```
 make figure-<FIGURE_NUMBER>
 ```
+
+The commands above will rerun the experiments. If cached data exsists, it will be used to reproduce the figures. If you wish to reset cached data, simply empty the contents of `./.cached/`, and the experiments will run from scratch.
 
 ### Using the conformal prediction methods
 
@@ -177,6 +185,12 @@ oracle = Oracle(model=model, train_set=train_set, test_set=test_set, strategy='l
 # start active learning for 1 round
 oracle.teach(1)
 print(oracle.round_accuracies)
+```
+
+## Run the tests
+
+```
+pytest .
 ```
 
 ## Contact
