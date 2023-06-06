@@ -68,19 +68,19 @@ table-3.5:
 
 # Chapter 4
 figure-4.1:
-	python src/visualization/time_series_AMZN_model_eval.py
+	python src/visualization/time_series_AMZN_model_eval_figure.py
 table-4.1:
 	python src/experiments/conformal_time_series.py
 	python src/visualization/time_series_conformal_prediction_table.py
 
 # Chapter 5
-table-4.1.a:
+table-5.1.a:
 	python src/experiments/active_learning.py 
 	python src/experiments/active_learning.py --strategy conformal-score:largest-set
 	python src/experiments/active_learning.py --strategy random-sampler
 	python src/experiments/active_learning.py --strategy entropy-sampler
 	python src/visualization/active_learning_CIFAR10_figure.py
-table-4.1.b:
+table-5.1.b:
 	python src/experiments/active_learning.py --dataset Cifar10Aug
 	python src/experiments/active_learning.py --dataset Cifar10Aug --strategy conformal-score:largest-set
 	python src/experiments/active_learning.py --dataset Cifar10Aug --strategy random-sampler
