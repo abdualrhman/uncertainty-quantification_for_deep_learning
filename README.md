@@ -72,7 +72,7 @@ make models
 
 ### Reproduce the tables and figures
 
-To reproduce the tables, type the following command
+To reproduce the tables, type the following command:
 
 ```
 make table-<TABLE_NUMBER>
@@ -90,7 +90,7 @@ or
 table-5.1.a
 ```
 
-To reproduce figures, use the following command
+To reproduce figures, use the following command:
 
 ```
 make figure-<FIGURE_NUMBER>
