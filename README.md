@@ -14,6 +14,7 @@ This repository contains the code used in the production of results for the thes
     │
     ├── models             <- Trained and saved models,
     │
+    ├── .cached             <- cached results and logits from experiments
     │
     │
     ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
