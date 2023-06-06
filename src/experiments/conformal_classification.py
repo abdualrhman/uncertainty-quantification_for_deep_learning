@@ -1,4 +1,6 @@
-from src.models.conformal_model import *
+from torch.serialization import SourceChangeWarning
+import warnings
+from src.models.conformal_classifier import *
 import argparse
 import pandas as pd
 from tqdm import tqdm
@@ -67,8 +69,8 @@ def trial(model, logits, alpha, kreg, lamda, randomized, n_data_conf, pct_paramt
     loader_val = torch.utils.data.DataLoader(
         logits_val, batch_size=bsz, shuffle=False, pin_memory=True)
 
-    conformal_model = ConformalModelLogits(model, loader_cal, alpha=alpha, kreg=kreg, lamda=lamda, randomized=randomized,
-                                           allow_zero_sets=True, naive=naive_bool, batch_size=bsz, lamda_criterion='size')
+    conformal_model = ConformalClassifierLogits(model, loader_cal, alpha=alpha, kreg=kreg, lamda=lamda, randomized=randomized,
+                                                allow_zero_sets=True, naive=naive_bool, batch_size=bsz, lamda_criterion='size')
     # Collect results
     top1_avg, top5_avg, f1score_avg, cvg_avg, sz_avg = validate(
         loader_val, conformal_model, print_bool=False)
@@ -128,7 +130,7 @@ if __name__ == "__main__":
         df = pd.read_csv(cache_fname)
     except:
         # Configure experiment
-        modelnames = ['Cifar10ConvModel', 'Cifar10Resnet20']
+        modelnames = ['Cifar10ConvModel']
         alphas = [0.1]
         predictors = ['Naive', 'APS', 'RAPS']
         params = list(itertools.product(modelnames, alphas, predictors))

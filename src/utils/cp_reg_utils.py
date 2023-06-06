@@ -7,14 +7,15 @@ from typing import Tuple
 from src.models.CQR import CQR_logits
 from src.utils.utils import get_model_output, isTorchModel, AverageMeter
 from src.models.gradient_boosting_quantile_regressor import ConformalPreComputedLogits
-
+import warnings
+from torch.serialization import SourceChangeWarning
+warnings.filterwarnings("ignore", category=SourceChangeWarning)
 
 def warn(*args, **kwargs):
     pass
 
 
 warnings.warn = warn
-warnings.simplefilter("ignore", UserWarning)
 
 
 def split2(dataset, n1, n2):

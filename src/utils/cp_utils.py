@@ -1,15 +1,12 @@
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as optim
 import torchvision
-import torchvision.transforms as transforms
 import time
-import pathlib
-import os
-import pickle
 from tqdm import tqdm
 from src.utils.utils import *
+import warnings
+from torch.serialization import SourceChangeWarning
+warnings.filterwarnings("ignore", category=SourceChangeWarning)
 
 
 def sort_sum(scores):
@@ -128,28 +125,3 @@ def get_logits_targets(model, loader):
     # Construct the dataset
     dataset_logits = torch.utils.data.TensorDataset(logits, labels.long())
     return dataset_logits
-
-
-# def get_logits_dataset(modelname, datasetname, datasetpath='', cache='.cache/'):
-#     fname = cache + datasetname + '/' + modelname + '.pkl'
-
-#     # If the file exists, load and return it.
-#     if os.path.exists(fname):
-#         with open(fname, 'rb') as handle:
-#             return pickle.load(handle)
-
-#     # Else we will load our model, run it on the dataset, and save/return the output.
-#     model = get_model(modelname)
-#     dataset = get_dataset(datasetname, train=False)
-#     loader = torch.utils.data.DataLoader(
-#         dataset, batch_size=32)
-
-#     # Get the logits and targets
-#     dataset_logits = get_logits_targets(model, loader)
-
-#     # Save the dataset
-#     os.makedirs(os.path.dirname(fname), exist_ok=True)
-#     with open(fname, 'wb') as handle:
-#         pickle.dump(dataset_logits, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-#     return dataset_logits

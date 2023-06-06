@@ -12,7 +12,8 @@ class CQR(nn.Module):
 
         self.model = model
         # compute logits
-        calib_logits_set = get_logits_targets(self.model, calib_loader)
+        calib_logits_set = get_logits_targets(
+            self.model, calib_loader, out_dim=2)
         calib_logit_loader = torch.utils.data.DataLoader(
             calib_logits_set, batch_size=batch_size, shuffle=False, pin_memory=True)
 

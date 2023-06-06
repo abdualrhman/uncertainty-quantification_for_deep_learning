@@ -1,6 +1,6 @@
-# classification-uncertainty-quantification
+# Uncertainty Quantification in Deep Learning
 
-A short description of the project.
+This repository contains the code used in the production of results for the thesis "Uncertainty Quantification in Machine Learning Models Using Conformal Prediction".
 
 ## Project Organization
 
@@ -37,15 +37,24 @@ A short description of the project.
     │   │   ├── make_amzn_stock_price_dataset.py
     │   │   └── make_dataset.py
     │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
     │   │
     │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
+    │   │                     predictions
     │   │
     │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
     │
     └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
+
+## Usage
+
+### Requirments
+
+To install requirements:
+
+```
+pip install -r requirements.txt
+```
+
+## Contact
+
+If you have any questions or feedback, please feel free to reach out at `abdulrahman.ramdan@outlook.com`.

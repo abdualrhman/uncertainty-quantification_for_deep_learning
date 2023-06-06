@@ -19,7 +19,7 @@ from src.models.cifar10_conv_model import Cifar10ConvModel
 from src.models.lstm_model import LSTM
 from src.data.make_amzn_stock_price_dataset import AMZN_SP
 from src.models.quantile_net import QuantileNet
-from src.models.resnet_with_dropout import ResNetWithDropout
+import warnings
 
 
 def warn(*args, **kwargs):
@@ -27,7 +27,6 @@ def warn(*args, **kwargs):
 
 
 warnings.warn = warn
-warnings.simplefilter("ignore", UserWarning)
 
 
 def get_model_alpha(modelname: str) -> str:
@@ -249,12 +248,6 @@ def get_model(modelname, datasetname=''):
     if modelname == 'Cifar10Resnet20':
         model = torch.hub.load(
             "chenyaofo/pytorch-cifar-models", "cifar10_resnet20",  pretrained=True)
-        model.eval()
-        model = torch.nn.DataParallel(model).cpu()
-    elif modelname == 'Cifar10Resnet20MCD':
-        model = torch.hub.load(
-            "chenyaofo/pytorch-cifar-models", "cifar10_resnet20",  pretrained=True)
-        model = ResNetWithDropout(resnet=model)
         model.eval()
         model = torch.nn.DataParallel(model).cpu()
 

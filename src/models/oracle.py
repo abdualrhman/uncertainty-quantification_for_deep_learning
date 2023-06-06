@@ -8,10 +8,7 @@ from sklearn import metrics
 from tqdm import tqdm
 from torch.utils.data import Dataset, Subset
 import torch.optim as optim
-import time
-from src.utils.cp_reg_utils import regression_coverage_score
-from src.models.conformal_model import ConformalModel
-from src.models.quantile_net import QuantileLoss
+from src.models.conformal_classifier import ConformalClassifier
 
 
 class DataSubset(Subset):
@@ -176,7 +173,7 @@ class Oracle:
         calib_subset = torch.utils.data.Subset(self.train_set, calib_idx)
         calib_loader = torch.utils.data.DataLoader(
             calib_subset, shuffle=False)
-        self.conformal_model = ConformalModel(
+        self.conformal_model = ConformalClassifier(
             model=self.model, calib_loader=calib_loader, alpha=self.alpha)
 
     def get_train_data(self, train_idx=None):

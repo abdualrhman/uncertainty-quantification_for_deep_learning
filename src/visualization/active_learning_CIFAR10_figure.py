@@ -17,18 +17,18 @@ if __name__ == "__main__":
     datasetname = args.dataset
     dirpath = './.cache/active_learning_experiments'
     sample_size = 1000
-    datasetname = args.dataset
+    model_default_acc = 0.702 if datasetname == 'Cifar10' else 0.552
     modelnames = ['Cifar10ConvModel']
     strategies = [
         'least-confidence',
         # 'conformal-score:least-confidence',
-        # 'conformal-score:largest-set',
+        'conformal-score:largest-set',
         'random-sampler',
-        # 'entropy-sampler'
+        'entropy-sampler'
     ]
     params = list(itertools.product(strategies, modelnames))
 
-    fig = plt.figure(figsize=(8, 11))
+    fig = plt.figure()
     for strategy, modelname in params:
         cache_fname = f"{dirpath}/{datasetname}_{strategy}_{modelname}_{sample_size}.csv"
         df = pd.read_csv(cache_fname)
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         plt.plot(avg+std, ':', color=plt_color,
                  label=f"{strategy.replace('-', ' ')} ± std")
         plt.plot(avg-std, ':', color=plt_color)
-    plt.axhline(y=0.702, color='gray',
+    plt.axhline(y=model_default_acc, color='purple',
                 linestyle='--', label='model accuracy')
     plt.legend()
     plt.ylabel('Model accuracy')

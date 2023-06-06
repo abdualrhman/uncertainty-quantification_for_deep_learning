@@ -1,5 +1,4 @@
 import argparse
-from enum import unique
 import pandas as pd
 import torch.backends.cudnn as cudnn
 import random
@@ -11,39 +10,7 @@ from src.models.conformal_forcast import ConformalForcast
 from src.utils.cp_utils import *
 from src.utils.utils import *
 from src.utils.conformal_forcaster_utils import validate_forcaster
-from src.models.oracle import Oracle
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
-
-def make_table(df):
-    def round_to_n(x, n): return np.round(
-        x, -int(np.floor(np.log10(x))) + (n - 1))  # Rounds to sig figs
-    alpha_set = {" ".join(f'{str(i)},' for i in df.alpha.unique())}
-    table = ""
-    table += "\\begin{table}[t] \n"
-    table += "\\centering \n"
-    table += "\\small \n"
-    table += "\\begin{tabular}{lccccccccccc} \n"
-    table += "\\toprule \n"
-    table += "Model & Avg. length & Coverage & $ \\alpha$ \\\\ \n"
-    table += "\\midrule \n"
-    for model in df.Model.unique():
-        for alpha in df.alpha.unique():
-            df_model = df[df.Model == model]
-            table += f"\\verb|{model}| & "
-            table += str(round_to_n(
-                df_model.Length[df_model.alpha == alpha].item(), 3)) + " & "
-            table += str(round_to_n(df_model["Coverage"]
-                         [df_model.alpha == alpha].item(), 3)) + " & "
-            table += str(round_to_n(
-                df_model.alpha[df_model.alpha == alpha].item(), 3)) + " \\\\ \n"
-
-    table += "\\bottomrule \n"
-    table += "\\end{tabular} \n"
-    table += "\\caption{\\textbf{Results on Amazon Stock Price dataset.} We report the prediction interval length and the coverage for $\\alpha \in \{ 0.2, 0.1, 0.05 \}$ for a conformalized LSTM model.} \n"
-    table += "\\label{table:amazon_stock_price.1} \n"
-    table += "\\end{table} \n"
-    return table
 
 
 def trail(modelname, test_set, alpha, n_data_conf):
@@ -92,13 +59,11 @@ if __name__ == "__main__":
     random.seed(seed)
     datasetname = args.dataset
     modelname = args.model
-    dirpath = './.cache/conformal_forcast'
-    cache_fname = f"{dirpath}/{datasetname}_{modelname}.csv"
+
+    cache_fname = f".cache/time_series_conformal_prediction_{datasetname}_{modelname}.csv"
     try:
         df = pd.read_csv(cache_fname)
     except:
-        if not os.path.exists(dirpath):
-            os.makedirs(dirpath)
         n_trials = 15
         alphas = [0.2, 0.1, 0.05]
         bsz = 16
@@ -118,8 +83,3 @@ if __name__ == "__main__":
                             },
                            ignore_index=True)
         df.to_csv(cache_fname)
-    table_str = make_table(df)
-    table = open(
-        f"reports/tables/{datasetname}_{modelname}_table".replace('.', '_') + ".tex", 'w')
-    table.write(table_str)
-    table.close()

@@ -24,8 +24,7 @@ class WineQuality(Dataset):
                 print("Loaded from pre-processed files")
                 return
             except ValueError:  # not created yet, we create instead
-                print("Saved data files not found!")
-        print("Processing new data ...")
+                print("Processing data")
         content = self.read_raw()
         input_cols = ['fixed acidity',
                       'volatile acidity',

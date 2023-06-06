@@ -5,7 +5,9 @@ import numpy as np
 from numpy.typing import ArrayLike
 from typing import Tuple
 from src.utils.utils import isTorchModel, AverageMeter
-
+import warnings
+from torch.serialization import SourceChangeWarning
+warnings.filterwarnings("ignore", category=SourceChangeWarning)
 
 def validate_forcaster(val_loader,  model, print_bool: bool = False) -> Tuple[float, float]:
     with torch.no_grad():

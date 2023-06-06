@@ -18,7 +18,6 @@ def warn(*args, **kwargs):
 
 
 warnings.warn = warn
-warnings.simplefilter("ignore", UserWarning)
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 

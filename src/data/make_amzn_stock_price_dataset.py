@@ -25,7 +25,7 @@ class AMZN_SP(Dataset):
                 print("Loaded from pre-processed files")
                 return
             except ValueError:  # not created yet, we create instead
-                print("Data files not found!")
+                print("Processed data")
 
         content = self.read_raw()
         content = content[['Date', 'Close']]

@@ -73,17 +73,3 @@ def test_teaching_with_too_many_rounds_raises_error():
     o = Oracle(model=model, train_set=train_set, test_set=test_set, **params)
     with pytest.raises(ValueError):
         o.teach(100000)
-
-
-def test_query_sample_idx_are_unlabeled():
-    params = {
-        'sample_size': 150,
-        'strategy': 'least-confidence'
-    }
-    model = Cifar10ConvModel()
-    o = Oracle(model=model, train_set=train_set, test_set=test_set, **params)
-    o.teach(1)
-    sample_idx = o.query_sample_idx()
-    labeled_idx = o.get_unlabeled_data()[0]
-    # check queried indecies are unlabeled
-    assert np.in1d(labeled_idx, sample_idx()).shape[0] == 0

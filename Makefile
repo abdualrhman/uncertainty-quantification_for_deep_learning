@@ -29,6 +29,64 @@ requirements: test_environment
 data: requirements
 	$(PYTHON_INTERPRETER) src/data/make_dataset.py data/raw data/processed
 
+## Make Models
+models: 
+	gdown --no-check-certificate --folder https://drive.google.com/drive/u/0/folders/1L4nJkXSsvWCRG77dYb4ju06RMR_ImPHP
+
+# Make tables
+# Chapter 2
+table-2.1:
+	python src/experiments/conformal_classification.py
+	python src/visualization/classification_confromal_prediction_table.py
+
+table-2.2:
+	python src/experiments/monte-carlo-dropout.py
+	python src/visualization/classification_mote_carlo_table.py
+
+table-2.3:
+	python src/experiments/conformal_classification.py --dataset Cifar10Aug
+	python src/visualization/classification_confromal_prediction_table.py --dataset Cifar10Aug
+
+table-2.4:
+	python src/experiments/monte-carlo-dropout.py --dataset Cifar10Aug
+	python src/visualization/classification_mote_carlo_table.py --dataset Cifar10Aug
+
+# Chapter 3
+table-3.2:
+	python src/experiments/conformal_regression.py --dataset california_housing
+	python src/visualization/regression_predictors_tables.py --dataset california_housing
+table-3.3:
+	python src/experiments/conformal_regression.py --dataset california_housing
+	python src/visualization/regression_predictors_tables.py --dataset california_housing
+
+table-3.4:
+	python src/experiments/conformal_regression.py --dataset wine_quality
+	python src/visualization/regression_predictors_tables.py --dataset wine_quality
+table-3.5:
+	python src/experiments/conformal_regression.py --dataset wine_quality
+	python src/visualization/regression_predictors_tables.py --dataset wine_quality
+
+# Chapter 4
+figure-4.1:
+	python src/visualization/time_series_AMZN_model_eval.py
+table-4.1:
+	python src/experiments/conformal_time_series.py
+	python src/visualization/time_series_conformal_prediction_table.py
+
+# Chapter 5
+table-4.1.a:
+	python src/experiments/active_learning.py 
+	python src/experiments/active_learning.py --strategy conformal-score:largest-set
+	python src/experiments/active_learning.py --strategy random-sampler
+	python src/experiments/active_learning.py --strategy entropy-sampler
+	python src/visualization/active_learning_CIFAR10_figure.py
+table-4.1.b:
+	python src/experiments/active_learning.py --dataset Cifar10Aug
+	python src/experiments/active_learning.py --dataset Cifar10Aug --strategy conformal-score:largest-set
+	python src/experiments/active_learning.py --dataset Cifar10Aug --strategy random-sampler
+	python src/experiments/active_learning.py --dataset Cifar10Aug --strategy entropy-sampler
+	python src/visualization/active_learning_CIFAR10_figure.py --dataset Cifar10Aug
+
 ## Delete all compiled Python files
 clean:
 	find . -type f -name "*.py[co]" -delete
