@@ -77,7 +77,7 @@ In order run the experiments, you must download the pretrained models by using:
 make models
 ```
 
-### Reproduce the tables and figures
+### Reproduce tables and figures
 
 To reproduce the tables, type the following command:
 
