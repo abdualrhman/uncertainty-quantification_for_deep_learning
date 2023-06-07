@@ -20,6 +20,9 @@ This repository contains the code used in the production of results for the thes
     ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
     │   ├── figures        <- Generated graphics and figures to be used in reporting
     │   └── tables         <- Generated LaTeX tables.
+    |
+    ├── examples            <- Generated analysis as HTML, PDF, LaTeX, etc.
+    │   └── conformal_predictions.ipynb   <-  Contains examples for using UQ methods
     │
     ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
     │                         generated with `pip freeze > requirements.txt`
@@ -107,7 +110,7 @@ The commands above will rerun the experiments. If cached data exsists, it will b
 
 ### Using the conformal prediction methods
 
-The notebook in `examples/conforal_predictions.ipynb` contains a detailed example of how to use the uncertainty quantification methods with `pytorch`.
+The notebook in `examples/conforal_predictions.ipynb` contains examples for using the uncertainty quantification methods with `pytorch`.
 
 The class `ConformalClassifier` is built to conformalize a neural network clas-
 sifier, taking a model, calibration dataloader and an error rate α as parameters
