@@ -107,6 +107,8 @@ The commands above will rerun the experiments. If cached data exsists, it will b
 
 ### Using the conformal prediction methods
 
+The notebook in `examples/conforal_predictions.ipynb` contains a detailed example of how to use the uncertainty quantification methods with `pytorch`.
+
 The class `ConformalClassifier` is built to conformalize a neural network clas-
 sifier, taking a model, calibration dataloader and an error rate α as parameters
 and outputs prediction sets. Upon initialization, the class calibrates the model
@@ -117,6 +119,7 @@ forward pass, the class constructs a prediction set from the base model outputs.
 import torch
 import torchvision
 from src.models.conformal_classifier import ConformalClassifier
+from src.models.cifar10_conv_model import Cifar10ConvModel
 from src.utils.utils import get_CIFAR10_img_transformer
 # load datasets
 calib_set = torchvision.datasets.CIFAR10(train=True, root='data/processed', download=True, transform=get_CIFAR10_img_transformer())
@@ -167,7 +170,14 @@ from src.models.quantile_net import QuantileLoss
 loss_fn = QuantileLoss([0.05, 0.95])
 ```
 
-For active learning, the class `Oracle` can be used by passing the model, training set, test set, and sampling parameters.
+For active learning, the class `Oracle` can be used by passing the model, training set, test set, and sampling parameters. Abailable strategies:
+
+- `conformal-score:largest-set`
+- `least-confidence`
+- `entropy-sampler`
+- `random-sampler`
+
+See `src/models/oracle` for more details
 
 ```python
 
@@ -182,7 +192,9 @@ test_set = torchvision.datasets.CIFAR10(
     train=False, root='data/processed', transform=get_CIFAR10_img_transformer())
 
 model = Cifar10ConvModel()
-oracle = Oracle(model=model, train_set=train_set, test_set=test_set, strategy='least-confidence', sample_size=1000)
+# number of initial training samples
+n_init_training_labels=1000
+oracle = Oracle(model=model, train_set=train_set, test_set=test_set, strategy='conformal-score:largest-set', sample_size=1000, n_init_training_labels=n_init_training_labels)
 # start active learning for 1 round
 oracle.teach(1)
 print(oracle.round_accuracies)
