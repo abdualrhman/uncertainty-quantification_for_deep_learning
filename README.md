@@ -1,6 +1,6 @@
 # Uncertainty Quantification in Deep Learning
 
-This repository contains the code used in the production of results for the thesis "Uncertainty Quantification in Machine Learning Models Using Conformal Prediction".
+This repository contains the code used in the production of results for the thesis [Uncertainty Quantification in Machine Learning Models Using Conformal Prediction](https://github.com/abdualrhman/uncertainty-quantification_for_deep_learning/tree/main/thesis/thesis.pdf).
 
 ## Project Organization
 
@@ -20,6 +20,10 @@ This repository contains the code used in the production of results for the thes
     ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
     │   ├── figures        <- Generated graphics and figures to be used in reporting
     │   └── tables         <- Generated LaTeX tables.
+    |
+    |
+    ├── thesis             <- Detailed thesis write-up.
+    │   └──  figures        <- PDF document containing the submitted thesis.
     |
     ├── examples            <- Generated analysis as HTML, PDF, LaTeX, etc.
     │   └── conformal_predictions.ipynb   <-  Contains examples for using UQ methods
